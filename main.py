@@ -8,79 +8,110 @@ from pygame import mixer
 pygame.init()
 
 # Creating the screen (frame):
-screen = pygame.display.set_mode((806, 600))  # defining the size of the screen
-
-# Background image:
-background = pygame.image.load('background.png')
+screen = pygame.display.set_mode((800, 600))  # defining the size of the screen
 
 # Background sound defining:
-mixer.music.load("music.mp3")
-mixer.music.play(-1)
+sound = pygame.mixer.Sound("assets/sounds/background-music.wav")
+sound.set_volume(0.1)
+sound.play(-1)
 
 # Caption and icon defining:
 pygame.display.set_caption("Cupcake Invaders")
-icon = pygame.image.load('icon.png')
+icon = pygame.image.load('assets/images/icon.png')
 pygame.display.set_icon(icon)
 
-# Player:
-playerImg = pygame.image.load('baker.png')
-# Initial location of the player:
+# Explosion image and its initial location:
+explosionImg = pygame.image.load('assets/images/boom.png')
+collisionX = 0
+collisionY = 500
+
+# Points images:
+onePntImg = pygame.image.load('assets/images/one.png')
+twoPntsImg = pygame.image.load('assets/images/two.png')
+threePntsImg = pygame.image.load('assets/images/three.png')
+fourPntsImg =pygame.image.load('assets/images/four.png')
+fivePntsImg = pygame.image.load('assets/images/five.png')
+
+# Player's image and its initial location:
+playerImg = pygame.image.load('assets/images/baker.png')
 playerX = 370
 playerY = 471
 
-# Lettuce:
-lettuceImg = pygame.image.load('lettuce.png')
+# Lettuce's image and its initial location and state:
+lettuceImg = pygame.image.load('assets/images/lettuce.png')
 lettuceY = 20
 lettuceX_change = 0
-lettuceY_change = 3
+lettuceY_change = 1
 lettuce_state = "hidden"
 # "Hidden" - You can't currently see the lettuce on the screen
 # "Falling" - The lettuce is currently moving
+lettuceFlag = False # indicates if the death was caused by a lettuce
 
-# Enemies:
-enemyImg = []
-enemyX = []
-enemyY = []
-enemyX_change = []
-enemyY_change = []
-num_of_enemies = 5  # moves as fast as our baker
-enemies = ['cupcake.png', 'cupcake2.png', 'cupcake3.png', 'cupcake4.png', 'cupcake5.png']
-for i in range(num_of_enemies):
-    enemyImg.append(pygame.image.load(enemies[i]))
-    enemyX.append(random.randint(0, 736))
-    enemyY.append(random.randint(50, 150))
-    enemyX_change.append(5)
-    enemyY_change.append(40)
+# Cupcakes images and movement parameters initialization:
+cupcakeImg = []
+cupcakeX = []
+cupcakeY = []
+cupcakeX_change = []
+cupcakeY_change = []
+num_of_cupcakes = 5
+cupcakes = ['assets/images/cupcake.png', 'assets/images/cupcake2.png', 'assets/images/cupcake3.png',
+            'assets/images/cupcake4.png', 'assets/images/cupcake5.png']
+for i in range(num_of_cupcakes):
+    cupcakeImg.append(pygame.image.load(cupcakes[i]))
+    cupcakeX.append(random.randint(0, 736))
+    cupcakeY.append(random.randint(50, 150))
+    cupcakeX_change.append(1.1)
+    cupcakeY_change.append(40)
 
-# Bullet:
-bulletImg = pygame.image.load('open-mouth.png')
+# Bullet's image and its initial location and state:
+bulletImg = pygame.image.load('assets/images/open-mouth.png')
 bulletX = 0
 bulletY = 500
 bulletX_change = 0
-bulletY_change = 20  # moves fast
+bulletY_change = 4
 bullet_state = "ready"
 # "Ready" - You can't see the bullet on the screen
 # "Fire" - The bullet is currently moving
 
-# Bonus items:
+# Bonus items images and initial location and state:
 bonusY = 20
 bonusX_change = 0
-bonusY_change = 5
-bonus_types_and_imgs = {0: ['mixer.png', 4], 1: ['spatula.png', 2], 2: ['oven.png', 5], 3: ['rolling_pin.png', 3]}
+bonusY_change = 2
+mixerImg = pygame.image.load('assets/images/mixer.png')
+spatulaImg = pygame.image.load('assets/images/spatula.png')
+ovenImg = pygame.image.load('assets/images/oven.png')
+pinImg = pygame.image.load('assets/images/rolling_pin.png')
+bonus_types_and_imgs = {0: [mixerImg, 4, fourPntsImg], 1: [spatulaImg, 2, twoPntsImg], 2: [ovenImg, 5, fivePntsImg], 3: [pinImg, 3, threePntsImg]}
 bonus_state = "hidden"
 # "Hidden" - no bonus is currently on the screen
 # "Falling" - bonus is currently falling
 
-# Score
+# Score's font and location:
 score_value = 0
-font = pygame.font.Font('font.ttf', 32)
-
-# Defining the location of the score on the screen:
+font = pygame.font.Font('assets/fonts/font.ttf', 32)
 textX = 10
 textY = 10
 
 # Game Over font:
-over_font = pygame.font.Font('Pixelmania.ttf', 38)
+over_font = pygame.font.Font('assets/fonts/Pixelmania.ttf', 38)
+
+
+# Initializing different variables:
+game_over = False
+running = True
+time_to_die = None
+time_for_cupcake = None
+time_for_bonus = None
+bonus_type = None
+counter=0
+
+# Custom events:
+BONUSEVENT = pygame.USEREVENT
+LETTUCEEVENT = pygame.USEREVENT
+# insert bonus custom event into the event queue, will be called every 4000 milliseconds
+pygame.time.set_timer(BONUSEVENT, 4000)
+# insert lettuce custom event into the event queue, will be called every 3000 milliseconds
+pygame.time.set_timer(LETTUCEEVENT, 3000)
 
 
 def show_score(x, y):
@@ -97,8 +128,8 @@ def player(x, y):
     screen.blit(playerImg, (x, y))
 
 
-def enemy(x, y, i):
-    screen.blit(enemyImg[i], (x, y))
+def cupcake(x, y, i):
+    screen.blit(cupcakeImg[i], (x, y))
 
 
 def fire_bullet(x, y):
@@ -113,8 +144,8 @@ def fire_lettuce(x, y):
     screen.blit(lettuceImg, (x, y))
 
 
-def is_collision(enemyX, enemyY, x, y, minimum_distance):
-    distance = math.sqrt(math.pow(enemyX - x, 2) + (math.pow(enemyY - y, 2)))
+def is_collision(cupcakeX, cupcakeY, x, y, minimum_distance):
+    distance = math.sqrt(math.pow(cupcakeX - x, 2) + (math.pow(cupcakeY - y, 2)))
     if distance < minimum_distance:
         return True
     return False
@@ -123,28 +154,13 @@ def is_collision(enemyX, enemyY, x, y, minimum_distance):
 def give_bonus(x, y, bonus_type):
     global bonus_state
     bonus_state = "falling"
-    screen.blit(pygame.image.load(bonus_types_and_imgs[bonus_type][0]), (x, y))
-
-
-game_over = False
-running = True
-
-BONUSEVENT = pygame.USEREVENT
-LETTUCEEVENT = pygame.USEREVENT
-
-# insert bonus custom event into the event queue, will be called every 4000 milliseconds
-pygame.time.set_timer(BONUSEVENT, 4000)
-# insert lettuce custom event into the event queue, will be called every 3000 milliseconds
-pygame.time.set_timer(LETTUCEEVENT, 3000)
+    screen.blit(bonus_types_and_imgs[bonus_type][0], (x, y))
 
 
 # The game loop:
 while running:
     # RGB = Red, Green, Blue (in order to implement colors on screen)
-    screen.fill((0, 0, 0))
-
-    # Background Image
-    screen.blit(background, (0, 0))
+    screen.fill((177, 216, 255)) # RGB of azure color
 
     # Handle quitting key:
     for event in pygame.event.get():
@@ -162,12 +178,13 @@ while running:
     # Handle keystroke pressing:
     keys = pygame.key.get_pressed()
     if keys[K_LEFT]:  # move left
-        playerX -= 5
+        playerX -= 3
     if keys[K_RIGHT]:  # move right
-        playerX += 5
+        playerX += 3
     if keys[K_SPACE]:  # shoot
         if bullet_state is "ready":
-            # Get the current x coordinate of the spaceship
+            # Get the current x coordinate of the baker in order to prevent
+            # the bullet from moving along with her as she moves:
             bulletX = playerX
             fire_bullet(bulletX, bulletY)
 
@@ -178,79 +195,116 @@ while running:
         playerX = 680
 
     if not game_over:
-        # Enemy movement:
-        for i in range(num_of_enemies):
-            # Game Over handling:
-            if is_collision(enemyX[i], enemyY[i], playerX, playerY, 30): # the enemy reached our baker
-                for j in range(num_of_enemies):
-                    enemyY[j] = 2000  # this way they will all disappear
+        # Handle cupcakes movement:
+        for i in range(num_of_cupcakes):
+            # Handling collision of baker with cupcake:
+            collision = is_collision(cupcakeX[i], cupcakeY[i], playerX, playerY, 30)
+            if collision: # the cupcake reached our baker
+                # save the collision location before changing it:
+                collisionX = cupcakeX[i]
+                collisionY = cupcakeY[i]
+                # save the death time:
+                time_to_die = pygame.time.get_ticks() + 2000  # 2 second delay
+                noooSound = mixer.Sound("assets/sounds/nooo.wav")
+                noooSound.play()
                 game_over = True
+                for j in range(num_of_cupcakes):
+                    cupcakeY[j] = 2000  # this way all the cupcakes will disappear
                 break
-            enemyX[i] += enemyX_change[i]
-            if enemyX[i] <= 0:
-                enemyX_change[i] = 5
-                enemyY[i] += enemyY_change[i]
-            elif enemyX[i] >= 736:
-                enemyX_change[i] = -5
-                enemyY[i] += enemyY_change[i]
 
-            # Handle collision
-            collision = is_collision(enemyX[i], enemyY[i], bulletX, bulletY, 45)
-            if collision:
-                # biteSound = mixer.Sound("bite.wav")
-                # biteSound.play()
-                bulletY = 500
-                bullet_state = "ready"
+            # Handle cupcakes movement in case there wasn't collision:
+            cupcakeX[i] += cupcakeX_change[i]
+            if cupcakeX[i] <= 0:
+                cupcakeX_change[i] = 1.1
+                cupcakeY[i] += cupcakeY_change[i]
+            elif cupcakeX[i] >= 736:
+                cupcakeX_change[i] = -1.1
+                cupcakeY[i] += cupcakeY_change[i]
+
+            # Handle collision of bullet and cupcake:
+            collision = is_collision(cupcakeX[i], cupcakeY[i], bulletX, bulletY, 55)
+            if collision and bullet_state is "fire":
+                # save the time the baker hit the cupcake:
+                time_for_cupcake = pygame.time.get_ticks() + 300
+                biteSound = mixer.Sound("assets/sounds/bite.wav")
+                biteSound.play()
                 score_value += 1
-                # Getting a location for a new enemy:
-                enemyX[i] = random.randint(0, 736)
-                enemyY[i] = random.randint(50, 150)
-            enemy(enemyX[i], enemyY[i], i)
+                # save the collision location:
+                collisionX = bulletX
+                collisionY = bulletY
+                # set up bullet state for the next shooting:
+                bulletY = 500 # this way it won't be seen
+                bullet_state = "ready"
+                # Getting a location for a new cupcake:
+                cupcakeX[i] = random.randint(0, 736)
+                cupcakeY[i] = random.randint(50, 150)
+            cupcake(cupcakeX[i], cupcakeY[i], i)
 
-    # Bullet movement:
-    if bulletY <= 0:
-        bulletY = 500
-        bullet_state = "ready"
-
-    if bullet_state is "fire":
-        fire_bullet(bulletX, bulletY)
-        bulletY -= bulletY_change
-
-    # Lettuce movement:
-    if not game_over:
+        # Handle lettuce movement:
         if lettuceY >= 600:
             lettuceY = 0
             lettuce_state = "hidden"
-
         if lettuce_state is "falling":
             fire_lettuce(lettuceX, lettuceY)
             lettuceY += lettuceY_change
-            # Game Over handling:
-            if is_collision(lettuceX, lettuceY, playerX, playerY, 58):  # the lettuce reached our baker
-                # noooSound = mixer.Sound("nooo.wav")
-                # noooSound.play()
+            # Handling collision of the baker with lettuce:
+            collision = is_collision(lettuceX, lettuceY, playerX, playerY, 58)
+            if collision:
+                # save the death time:
+                time_to_die = pygame.time.get_ticks() + 2000  # 2 seconds delay
+                noooSound = mixer.Sound("assets/sounds/nooo.wav")
+                noooSound.play()
+                lettuceFlag = True
                 lettuceY = 2000  # this way the lettuce will disappear
                 game_over = True
 
-    # Bonus movement:
-    if not game_over:
+        # Handle bonuses movement:
         if bonusY >= 600:
             bonusY = 0
             bonus_state = "hidden"
-
         if bonus_state is "falling":
             give_bonus(bonusX, bonusY, bonus_type)
             bonusY += bonusY_change
             # Picking bonus handling:
-            if is_collision(bonusX, bonusY, playerX, playerY, 40):  # the baker picked the bonus
-                # yaySound = mixer.Sound("yay.wav")
-                # yaySound.play()
-                bonus_state = "hidden"
+            collision = is_collision(bonusX, bonusY, playerX, playerY, 70)
+            if collision:  # the baker picked a bonus
+                # save the picking time:
+                time_for_bonus = pygame.time.get_ticks() + 500
+                yaySound = mixer.Sound("assets/sounds/yay.wav")
+                yaySound.play()
                 score_value += bonus_types_and_imgs[bonus_type][1]
+                bonus_state = "hidden"
+
+    # Handle bullet movement and shooting:
+    if bulletY <= 0:
+        bulletY = 500
+        bullet_state = "ready"
+    if bullet_state is "fire":
+        fire_bullet(bulletX, bulletY)
+        bulletY -= bulletY_change
+
+    player(playerX, playerY)
+
+    if time_to_die:
+        if lettuceFlag:
+            screen.blit(explosionImg, (playerX + 30, playerY - 30))
+        else:
+            screen.blit(explosionImg, (collisionX + 20, collisionY - 20))
+        if pygame.time.get_ticks() >= time_to_die:
+            time_to_die = None
+
+    if time_for_cupcake:
+        screen.blit(onePntImg, (collisionX + 30, collisionY - 30))
+        if pygame.time.get_ticks() >= time_for_cupcake:
+            time_for_cupcake = None
+
+    if time_for_bonus and bonus_type is not None:
+        screen.blit(bonus_types_and_imgs[bonus_type][2], (playerX + 40, playerY - 20))
+        if pygame.time.get_ticks() >= time_for_bonus:
+            time_for_bonus = None
 
     if game_over:
         game_over_text()
 
-    player(playerX, playerY)
     show_score(textX, textY)
     pygame.display.update()

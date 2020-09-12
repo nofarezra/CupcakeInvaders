@@ -21,7 +21,7 @@ Download the repository from GitHub, and start developing :)
 Game Instructions:
 ============
 
-As the game begins, 5 cupcakes will appear on the screen and will start moving slowly at your direction.
+As the game begins, 5 cupcakes will appear on the screen and will start moving at your direction.
 
 Your baker must shoot all cupcakes before they reach her.
 
@@ -31,10 +31,24 @@ Try to pick as many bakery tools as you can in order to increase your score.
 
 (oven=5 points, mixer=4 points, rolling pin=3 points, spatula=2 points)
 
+![CupcakeInvaders](demo/bonus.gif)
+
 Your score will appear on the left upper corner of the screen.
 
-The game will over once one of the cupcakes will reach the baker at the bottom of the screen, or in case a lettuce hits her.
+The game will over once one of the cupcakes will reach the baker at the bottom of the screen:
 
+![CupcakeInvaders](demo/cupcakeDeath.gif)
+
+or in case a lettuce hits her:
+
+![CupcakeInvaders](demo/lettuceDeath.gif)
+
+
+Cloning the repository from GitHub:
+=============
+``
+$ git clone https://github.com/nofarezra/CupcakeInvaders.git
+``
 
 python version check:
 =============
@@ -60,8 +74,3 @@ Running the game:
 $ python main.py
 ``
 
-Cloning the repository from GitHub:
-=============
-``
-$ git clone https://github.com/nofarezra/CupcakeInvaders.git
-``
